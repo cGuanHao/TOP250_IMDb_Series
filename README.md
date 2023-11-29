@@ -10,3 +10,6 @@ Python 3.10
 imdb_chart_final.py：2.92 sec
 
 improve_imdb_crawler_final.py：53.97 sec
+
+# 資料來源
+[IMDb Top 250 TV Shows](https://www.imdb.com/chart/toptv/)
