@@ -159,11 +159,11 @@ if __name__ == '__main__':
     future_d = {}
     tp = ThreadPoolExecutor(12)
     
-    for j in range(len(link)):  # 非同步非阻塞 asynchronous non-blocking
+    for j in range(len(link)): 
         ret = tp.submit(crawler_genres_ori_lan_intro, link[j])
         future_d[j] = ret
 
-    for key in future_d:  # 同步阻塞 synchronous blocking
+    for key in future_d: 
         print(key, future_d[key].result())
         
         genres.append(future_d[key].result()[0])    
