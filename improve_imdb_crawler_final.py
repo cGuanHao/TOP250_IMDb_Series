@@ -1,4 +1,3 @@
-
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 import requests
@@ -27,7 +26,7 @@ def crawler_genres_ori_lan_intro(url):
             genre = sub_page_tag.find_all('span', class_="ipc-chip__text")                           
                        
             intro = [soup.find('span', class_="sc-466bb6c-2 chnFO")]           
-                       
+
             sub_page_origin = soup.find('li', {'data-testid':"title-details-origin"})
             origin = sub_page_origin.find_all('a', class_="ipc-metadata-list-item__list-content-item ipc-metadata-list-item__list-content-item--link")                           
                        
@@ -56,7 +55,7 @@ def crawler_genres_ori_lan_intro(url):
 
     return genre_content, origin_content, language_content, intro_content
           
-    time.sleep(1)
+    time.sleep(2)
 
 ################################################################
 
@@ -76,8 +75,7 @@ if __name__ == '__main__':
     soup_250 = BeautifulSoup(web.text, 'lxml')
        
     # detail content
-    series = soup_250.find_all('div', class_=
-                                "sc-479faa3c-0 fMoWnh cli-children")       
+    series = soup_250.find_all('div', class_="sc-1e00898e-0 jyXHpt cli-children")       
     rank, name = [], []
     release_year, final_year, duration, status, episodes, TVPG = [], [], [], [] ,[] ,[]
     link, demographic_link = [], []
@@ -85,21 +83,23 @@ if __name__ == '__main__':
     for row in series:
                       
         # rank # name
-        row_rank_and_name = row.find('div', class_=
-          "ipc-title ipc-title--base ipc-title--title ipc-title-link-no-icon ipc-title--on-textPrimary sc-479faa3c-9 dkLVoC cli-title")
+        
+        row_rank_and_name = row.find('h3', class_="ipc-title__text")
+        
         row_title = str(row_rank_and_name.text)
         row_title_split = row_title.split('. ')
         
         rank.append(row_title_split.pop(0))
         name.append(row_title_split.pop(0))
-   
+
         # release_year
         row_years_episode_TVPG = row.find_all('span', class_=
-                                              "sc-479faa3c-8 bNrEFi cli-title-metadata-item")
-        year = re.findall('\d{4,}\S', str(row_years_episode_TVPG))
+                                              "sc-1e00898e-8 hsHAHC cli-title-metadata-item")
+       
+        year = re.findall('\d{4,}\W', str(row_years_episode_TVPG))
         clean_release_year = year[0].rstrip(year[0][-1])
         release_year.append(clean_release_year)
-
+        
         # final_year # duration # status
         if len(year) == 2: 
             clean_final_year = year[1].rstrip(year[1][-1])
@@ -121,19 +121,22 @@ if __name__ == '__main__':
         status.append(condition)
 
         # episodes
-        row_episodes = re.findall('\d+\s.[eps]', str(row_years_episode_TVPG))
-        episodes.append(row_episodes[0].rstrip(' eps'))
-  
+        row_episodes = re.findall('\d+\s.[ep]', str(row_years_episode_TVPG))
+        episodes.append(row_episodes[0].rstrip(' ep'))
+
         # TVPG(TV Parental Guidelines)
         if len(row_years_episode_TVPG) == 3:
             row_TVPG = re.findall('[^>]+[$<]', str(row_years_episode_TVPG[-1]))
             clean_row_TVPG = row_TVPG[0].strip('<')
         else: clean_row_TVPG = ''
         TVPG.append(clean_row_TVPG)
+
+        
         
         # link
         link_add = re.findall('/title/.{9,10}/', str(row))
         link.append('https://www.imdb.com' + link_add[0])
+
                 
     # score
     series = soup_250.find_all('span', class_=
@@ -143,7 +146,7 @@ if __name__ == '__main__':
     for row in series:     
         row_score = re.findall('IMDb rating: \d+.\d', str(row))
         score.append(row_score[0][-3:])
-    
+
     # population    '''specific voting population number has got deleted''' 
     series = soup_250.find_all('span', class_="ipc-rating-star--voteCount")    
     population = []
@@ -157,13 +160,13 @@ if __name__ == '__main__':
     # sublink data
     genres, origin, language, introduction = [], [], [], []  
     future_d = {}
-    tp = ThreadPoolExecutor(12)
+    tp = ThreadPoolExecutor(8)
     
-    for j in range(len(link)): 
+    for j in range(len(link)):  # 非同步非阻塞 asynchronous non-blocking
         ret = tp.submit(crawler_genres_ori_lan_intro, link[j])
         future_d[j] = ret
 
-    for key in future_d: 
+    for key in future_d:  # 同步阻塞 synchronous blocking
         print(key, future_d[key].result())
         
         genres.append(future_d[key].result()[0])    
@@ -191,7 +194,6 @@ if __name__ == '__main__':
                  'Introduction': introduction}
     
     data_frame = pd.DataFrame(data_main)
-    
     
     # save as CSV file
     data_frame.to_csv('tv_series.csv', index=False)
